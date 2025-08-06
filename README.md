@@ -1,10 +1,16 @@
 # local-k8s
 
-## Install kubeadm
+## Install on local
 
 ```shell
-sudo swapoff -a
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+kubectl version --client
+```
 
+## Install kubeadm on remote
+
+```shell
 sudo apt-get update
 sudo apt-get install -y apt-transport-https ca-certificates curl gpg
 curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.33/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
@@ -20,8 +26,7 @@ sudo systemctl restart containerd
 ## Init kubeadm
 
 ```shell
-sudo kubeadm init
-export KUBECONFIG=/etc/kubernetes/admin.conf
+./deploy_k8s.sh
 ```
 
 ```shell
@@ -46,4 +51,13 @@ Then you can join any number of worker nodes by running the following on each as
 kubeadm join 192.168.18.10:6443 --token q8a8ch.w6tfkgv8ncrc7l7h \
 	--discovery-token-ca-cert-hash sha256:fad619bf65f1ab1e414810c7788221b252772029624288ef595209ca9f802120 
 
+```
+
+## Helpful commands
+
+```shell
+kubectl get pods -n kube-system
+kubectl cluster-info
+kubectl get nodes
+kubectl get pods
 ```
