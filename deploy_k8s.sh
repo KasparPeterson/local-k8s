@@ -42,7 +42,7 @@ sleep 20
 
 echo "calling kubeadm init..."
 sudo kubeadm init \
-  --apiserver-advertise-address 192.168.18.10 \
+  --apiserver-advertise-address 192.168.18.16 \
   --apiserver-bind-port 6443 \
   --pod-network-cidr=10.244.0.0/16 \
   --cri-socket=unix:///run/containerd/containerd.sock
@@ -69,7 +69,7 @@ sleep 10
 kubectl taint nodes --all node.kubernetes.io/not-ready-
 kubectl taint nodes --all node-role.kubernetes.io/control-plane-
 
-for i in {1..100}; do
+for i in {1..20}; do
     echo ""
     echo "Pods after calico - Iteration $i"
     kubectl get pods -A
@@ -77,3 +77,34 @@ for i in {1..100}; do
     kubectl get nodes -o wide
     sleep 3
 done
+
+
+# After steps
+
+# Deploy nginx-ingress
+# see what changes would be made, returns nonzero returncode if different
+#kubectl get configmap kube-proxy -n kube-system -o yaml | \
+#  sed -e "s/strictARP: false/strictARP: true/" | \
+#  kubectl diff -f - -n kube-system
+#
+# actually apply the changes, returns nonzero returncode on errors only
+#kubectl get configmap kube-proxy -n kube-system -o yaml | \
+#  sed -e "s/strictARP: false/strictARP: true/" | \
+#  kubectl apply -f - -n kube-system
+
+# install nginx-ingress
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.13.0/deploy/static/provider/cloud/deploy.yaml
+sleep 20
+kubectl apply -f ingress/nginx-ingress.yaml
+kubectl -n ingress-nginx patch svc ingress-nginx-controller \
+  -p '{"spec": {"externalTrafficPolicy": "Cluster"}}'
+kubectl patch deployment ingress-nginx-controller -n ingress-nginx -p '{"spec":{"template":{"spec":{"hostNetwork":true}}}}'
+kubectl patch svc ingress-nginx-controller -n ingress-nginx -p '{"spec":{"type":"ClusterIP"}}'
+
+
+# Deploy nginx "app"
+kubectl apply -f nginx/nginx-deploy.yaml
+# NodePort - should remove after ingress?
+kubectl apply -f nginx/nginx-svc.yaml
+
+

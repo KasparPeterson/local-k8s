@@ -9,7 +9,7 @@ spec:
   calicoNetwork:
     nodeAddressAutodetectionV4:
       firstFound: false
-      interface: "wlo.*"
+      interface: "enp86s0"
     ipPools:
     - name: default-ipv4-ippool
       blockSize: 26
